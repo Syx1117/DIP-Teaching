@@ -19,7 +19,7 @@ This repository is Yuxuan Song's implementation of Assignment_04 of DIP. The ass
 
 The repository provides two NeRF-synthetic style multi-view scenes, `chair` and `lego`.
 
-<img src="pics/scene_preview.png" alt="scene preview" width="800">
+<img src="pics/r_82.png" alt="scene preview" width="800">
 
 ## Data
 
@@ -275,6 +275,16 @@ COLMAP provides the sparse point cloud and camera parameters required to initial
 
 The projection debug step is useful because it verifies that `points3D.txt`, `images.txt`, and `cameras.txt` are interpreted consistently. If projected sparse points align with the input image, the camera convention and intrinsic matrix are correct.
 
+COLMAP results:
+
+<img src="pics/1.1.gif" alt="alt text" width="800">
+
+projecting results:
+
+<img src="pics/r_0.png" alt="alt text" width="800">
+
+<img src="pics/r_99.png" alt="alt text" width="800">
+
 ### Simplified 3DGS Rendering
 
 The PyTorch renderer can optimize a Gaussian cloud to reproduce the training views. The result quality mainly depends on:
@@ -287,8 +297,29 @@ The PyTorch renderer can optimize a Gaussian cloud to reproduce the training vie
 
 Because this is a simplified implementation, it is expected to produce blurrier and less complete results than the official 3DGS code. The implementation does not include adaptive densification, pruning, spherical harmonics, tile-based rasterization, or the optimized CUDA rasterizer.
 
+start results:
+
+<img src="pics/epoch_0000.png" alt="alt text" width="800">
+
+end results:
+
+<img src="pics/epoch_0199.png" alt="alt text" width="800">
+
+point cloud results:
+
+<img src="pics/2.1.gif" alt="alt text" width="800">
+
 ### Comparison with Official 3DGS
 
+3DGS points results:
+
+<img src="pics/3.1.gif" alt="alt text" width="800">
+
+rendered results:
+
+<img src="pics/00000.png" alt="alt text" width="800">
+
+<img src="pics/00099.png" alt="alt text" width="800">
 Compared with the official 3DGS implementation:
 
 | Aspect | This implementation | Official 3DGS |
@@ -296,9 +327,8 @@ Compared with the official 3DGS implementation:
 | Renderer | Pure PyTorch, full image grid | CUDA tile-based rasterizer |
 | Appearance | RGB color per Gaussian | Spherical harmonics view-dependent color |
 | Point growth | Fixed COLMAP points | Adaptive densification and pruning |
-| Speed | Slow, memory-heavy | Real-time or near real-time rendering |
+| Speed | Slow, memory-heavy(3 hours) | Real-time or near real-time rendering (6 mins)|
 | Quality | Coarser and blurrier | Sharper, denser, more complete |
-| Educational value | Transparent and easy to inspect | Production-quality but more complex |
 
 The official version is substantially faster because it avoids evaluating every Gaussian at every pixel. Instead, it bins Gaussians into screen-space tiles and only splats local contributions. It also improves geometry during training by splitting or cloning Gaussians in high-gradient regions and pruning unimportant ones.
 
