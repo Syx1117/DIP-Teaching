@@ -12,5 +12,5 @@
 To install requirements:
 ```setup
 python -m pip install torch torchvision opencv-python numpy pillow gradio tqdm matplotlib
-
+---
 ### Running：
