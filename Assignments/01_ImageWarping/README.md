@@ -1,7 +1,5 @@
 # Assignment 1 - Image Warping
 
-### In this assignment, you will implement basic transformation and point-based deformation for images.
-
 ### Resources:
 - [Teaching Slides](https://pan.ustc.edu.cn/share/index/66294554e01948acaf78) 
 - [Paper: Image Deformation Using Moving Least Squares](https://people.engr.tamu.edu/schaefer/research/mls.pdf)
