@@ -18,8 +18,85 @@ def apply_transform(image, scale, rotation, translation_x, translation_y, flip_h
     image = np.array(image_new)
     transformed_image = np.array(image)
 
-    ### FILL: Apply Composition Transform 
-    # Note: for scale and rotation, implement them around the center of the image （围绕图像中心进行放缩和旋转）
+    h, w = image.shape[:2]
+    cx, cy = w / 2.0, h / 2.0
+
+    # -----------------------------
+    # Translation to origin
+    # -----------------------------
+    T1 = np.array([
+        [1, 0, -cx],
+        [0, 1, -cy],
+        [0, 0, 1]
+    ], dtype=np.float32)
+
+    # -----------------------------
+    # Scale
+    # -----------------------------
+    S = np.array([
+        [scale, 0, 0],
+        [0, scale, 0],
+        [0, 0, 1]
+    ], dtype=np.float32)
+
+    # -----------------------------
+    # Rotation
+    # -----------------------------
+    theta = np.deg2rad(rotation)
+
+    R = np.array([
+        [np.cos(theta), -np.sin(theta), 0],
+        [np.sin(theta),  np.cos(theta), 0],
+        [0, 0, 1]
+    ], dtype=np.float32)
+
+    # -----------------------------
+    # Flip
+    # -----------------------------
+    if flip_horizontal:
+        F = np.array([
+            [-1, 0, 0],
+            [ 0, 1, 0],
+            [ 0, 0, 1]
+        ], dtype=np.float32)
+    else:
+        F = np.eye(3, dtype=np.float32)
+
+    # -----------------------------
+    # Move back to center
+    # -----------------------------
+    T2 = np.array([
+        [1, 0, cx],
+        [0, 1, cy],
+        [0, 0, 1]
+    ], dtype=np.float32)
+
+    # -----------------------------
+    # Translation
+    # -----------------------------
+    T = np.array([
+        [1, 0, translation_x],
+        [0, 1, translation_y],
+        [0, 0, 1]
+    ], dtype=np.float32)
+
+    # -----------------------------
+    # Composition
+    #
+    # p' = T * T2 * F * R * S * T1 * p
+    # -----------------------------
+    M = T @ T2 @ F @ R @ S @ T1
+
+    # OpenCV needs 2x3 matrix
+    affine = M[:2, :]
+
+    transformed_image = cv2.warpAffine(
+        image,
+        affine,
+        (w, h),
+        flags=cv2.INTER_LINEAR,
+        borderValue=(255, 255, 255)
+    )
 
     return transformed_image
 
