@@ -44,8 +44,11 @@ python run_point_transform.py
 ### Basic Transformation
 <img src="pics/global_demo.gif" alt="alt text" width="800">
 
-### Point Guided Deformation:
-<img src="pics/point_demo.gif" alt="alt text" width="800">
+### RBF Point Guided Deformation:
+<img src="pics/point_demo_1.gif" alt="alt text" width="800">
+
+### MLS Point Guided Deformation:
+<img src="pics/point_demo_2.gif" alt="alt text" width="800">
 
 ## Acknowledgement
 
