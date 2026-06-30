@@ -221,7 +221,13 @@ The sparse reconstruction estimates camera poses and sparse 3D points from match
 
 The expected BA output is a colored point cloud of the original model. The provided result visualization shows that the optimized points recover the human head and upper-body geometry from only 2D observations.
 
-<img src="pics/result.gif" alt="bundle adjustment result" width="300">
+point_cloud:
+
+<img src="pics/3.1.gif" alt="alt text" width="800">
+
+loss_curve:
+
+<img src="pics/loss_curve.png" alt="alt text" width="800">
 
 The important observations are:
 
@@ -240,6 +246,10 @@ The COLMAP pipeline is useful as a practical comparison to Task 1:
 - COLMAP starts only from images, extracts and matches features, estimates cameras, triangulates points, and refines everything with BA.
 
 Thus, Task 1 focuses on the mathematical core of Bundle Adjustment, while Task 2 demonstrates how the same idea is used inside a full reconstruction system.
+
+COLMAP results:
+
+<img src="pics/3.2.gif" alt="alt text" width="800">
 
 ## Analysis
 
