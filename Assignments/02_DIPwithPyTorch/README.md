@@ -10,15 +10,8 @@
 - [PyTorch Installation & Docs](https://pytorch.org/)
 
 ---
-
-### 1. Implement Poisson Image Editing with PyTorch.
-Fill the [Polygon to Mask function](run_blending_gradio.py#L95) and the [Laplacian Distance Computation](run_blending_gradio.py#L115) of 'run_blending_gradio.py'.
-
-
-### 2. Pix2Pix implementation.
-See [Pix2Pix subfolder](Pix2Pix/).
-
----
 ### Requirements:
-- 请自行环境配置，推荐使用[conda环境](https://docs.anaconda.com/miniconda/)
-- 按照模板要求写Markdown版作业报告
+To install requirements:
+```setup
+python -m pip install torch torchvision opencv-python numpy pillow gradio tqdm matplotlib
+
