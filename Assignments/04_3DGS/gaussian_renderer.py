@@ -1,10 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from typing import Dict, Tuple
-from dataclasses import dataclass
-import numpy as np
-import cv2
+from typing import Tuple
 
 
 class GaussianRenderer(nn.Module):
@@ -34,24 +30,36 @@ class GaussianRenderer(nn.Module):
         N = means3D.shape[0]
         
         # 1. Transform points to camera space
-        cam_points = means3D @ R.T + t.unsqueeze(0) # (N, 3)
+        cam_points = means3D @ R.T + t.reshape(1, 3) # (N, 3)
         
         # 2. Get depths before projection for proper sorting and clipping
-        depths = cam_points[:, 2].clamp(min=1.)  # (N, )
+        depths = cam_points[:, 2]  # (N, )
+        z = depths.clamp(min=1e-6)
         
         # 3. Project to screen space using camera intrinsics
         screen_points = cam_points @ K.T  # (N, 3)
-        means2D = screen_points[..., :2] / screen_points[..., 2:3] # (N, 2)
+        means2D = screen_points[..., :2] / z[:, None] # (N, 2)
         
         # 4. Transform covariance to camera space and then to 2D
         # Compute Jacobian of perspective projection
-        J_proj = torch.zeros((N, 2, 3), device=means3D.device)
-        ### FILL:
-        ### J_proj = ...
+        J_proj = torch.zeros((N, 2, 3), device=means3D.device, dtype=means3D.dtype)
+        x = cam_points[:, 0]
+        y = cam_points[:, 1]
+        fx = K[0, 0]
+        skew = K[0, 1]
+        k10 = K[1, 0]
+        fy = K[1, 1]
+
+        J_proj[:, 0, 0] = fx / z
+        J_proj[:, 0, 1] = skew / z
+        J_proj[:, 0, 2] = -(fx * x + skew * y) / (z * z)
+        J_proj[:, 1, 0] = k10 / z
+        J_proj[:, 1, 1] = fy / z
+        J_proj[:, 1, 2] = -(k10 * x + fy * y) / (z * z)
         
         # Transform covariance to camera space
-        ### FILL: Aplly world to camera rotation to the 3d covariance matrix
-        ### covs_cam = ...  # (N, 3, 3)
+        R_batch = R.unsqueeze(0).expand(N, -1, -1)
+        covs_cam = torch.bmm(R_batch, torch.bmm(covs3d, R_batch.transpose(1, 2)))  # (N, 3, 3)
         
         # Project to 2D
         covs2D = torch.bmm(J_proj, torch.bmm(covs_cam, J_proj.permute(0, 2, 1)))  # (N, 2, 2)
@@ -72,11 +80,16 @@ class GaussianRenderer(nn.Module):
         
         # Add small epsilon to diagonal for numerical stability
         eps = 1e-4
-        covs2D = covs2D + eps * torch.eye(2, device=covs2D.device).unsqueeze(0)
+        eye = torch.eye(2, device=covs2D.device, dtype=covs2D.dtype).unsqueeze(0)
+        covs2D = 0.5 * (covs2D + covs2D.transpose(1, 2)) + eps * eye
         
         # Compute determinant for normalization
-        ### FILL: compute the gaussian values
-        ### gaussian = ... ## (N, H, W)
+        det = torch.linalg.det(covs2D).clamp_min(1e-8)
+        inv_covs = torch.linalg.inv(covs2D)
+        exponent = -0.5 * torch.einsum('nhwi,nij,nhwj->nhw', dx, inv_covs, dx)
+        exponent = exponent.clamp(min=-80.0, max=20.0)
+        normalizer = 1.0 / (2.0 * torch.pi * torch.sqrt(det)).view(N, 1, 1)
+        gaussian = normalizer * torch.exp(exponent) ## (N, H, W)
     
         return gaussian
 
@@ -94,34 +107,46 @@ class GaussianRenderer(nn.Module):
         
         # 1. Project to 2D, means2D: (N, 2), covs2D: (N, 2, 2), depths: (N,)
         means2D, covs2D, depths = self.compute_projection(means3D, covs3d, K, R, t)
-        
-        # 2. Depth mask
-        valid_mask = (depths > 1.) & (depths < 50.0)  # (N,)
-        
-        # 3. Sort by depth
-        indices = torch.argsort(depths, dim=0, descending=False)  # (N, )
-        means2D = means2D[indices]      # (N, 2)
-        covs2D = covs2D[indices]       # (N, 2, 2)
-        colors = colors[ indices]       # (N, 3)
-        opacities = opacities[indices] # (N, 1)
-        valid_mask = valid_mask[indices] # (N,)
-        
-        # 4. Compute gaussian values
-        gaussian_values = self.compute_gaussian_values(means2D, covs2D, self.pixels)  # (N, H, W)
-        
-        # 5. Apply valid mask
-        gaussian_values = gaussian_values * valid_mask.view(N, 1, 1)  # (N, H, W)
+
+        valid_mask = depths > 1e-4
+        means2D = means2D[valid_mask]
+        covs2D = covs2D[valid_mask]
+        colors = colors[valid_mask]
+        opacities = opacities[valid_mask]
+        depths = depths[valid_mask]
+
+        N = means2D.shape[0]
+        if N == 0:
+            return torch.zeros((self.H, self.W, 3), device=means3D.device, dtype=means3D.dtype)
+
+        indices = torch.argsort(depths, dim=0, descending=False)
+        means2D = means2D[indices]
+        covs2D = covs2D[indices]
+        colors = colors[indices]
+        opacities = opacities[indices]
+
+        gaussian_values = self.compute_gaussian_values(means2D, covs2D, self.pixels)
         
         # 6. Alpha composition setup
         alphas = opacities.view(N, 1, 1) * gaussian_values  # (N, H, W)
+        alphas = alphas.clamp(min=0.0, max=0.999)
         colors = colors.view(N, 3, 1, 1).expand(-1, -1, self.H, self.W)  # (N, 3, H, W)
         colors = colors.permute(0, 2, 3, 1)  # (N, H, W, 3)
         
         # 7. Compute weights
-        ### FILL:
-        ### weights = ... # (N, H, W)
+        transmittance = torch.cumprod(
+            torch.cat(
+                [
+                    torch.ones((1, self.H, self.W), device=alphas.device, dtype=alphas.dtype),
+                    1.0 - alphas + 1e-10,
+                ],
+                dim=0,
+            ),
+            dim=0,
+        )[:-1]
+        weights = alphas * transmittance # (N, H, W)
         
         # 8. Final rendering
         rendered = (weights.unsqueeze(-1) * colors).sum(dim=0)  # (H, W, 3)
         
-        return rendered
+        return rendered.clamp(0.0, 1.0)
