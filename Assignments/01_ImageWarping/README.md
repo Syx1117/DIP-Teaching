@@ -9,21 +9,11 @@
 - [OpenCV Geometric Transformations](https://docs.opencv.org/4.x/da/d6e/tutorial_py_geometric_transformations.html)
 - [Gradio: 一个好用的网页端交互GUI](https://www.gradio.app/)
 
-### 1. Basic Image Geometric Transformation (Scale/Rotation/Translation).
-Fill the [Missing Part](run_global_transform.py#L21) of 'run_global_transform.py'.
-
-
-### 2. Point Based Image Deformation.
-
-Implement MLS or RBF based image deformation in the [Missing Part](run_point_transform.py#L52) of 'run_point_transform.py'.
-
----
-## 一个作业提交模板 (里面的结果也可参考)
 
 
 ## Implementation of Image Geometric Transformation
 
-This repository is Yudong Guo's implementation of Assignment_01 of DIP. 
+This repository is Yuxuan Song's implementation of Assignment_01 of DIP. 
 
 <img src="pics/teaser.png" alt="alt text" width="800">
 
