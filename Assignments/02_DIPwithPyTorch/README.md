@@ -146,6 +146,26 @@ input | target | output
 
 The fully convolutional structure makes the model suitable for dense prediction tasks. Skip connections help preserve low-level spatial information, while the bottleneck layers capture higher-level structure. Since the current implementation uses only an L1 reconstruction loss and does not include a discriminator, it is more accurately a supervised U-Net/FCN baseline inspired by Pix2Pix rather than a complete conditional GAN. As a result, the output is expected to recover the main layout and colors, but fine texture and sharp boundaries may be smoother than a full Pix2Pix model trained with adversarial loss.
 
+train_start 
+
+<img src="pics/01.png" alt="alt text" width="800">
+<img src="pics/02.png" alt="alt text" width="800">
+
+train_end
+
+<img src="pics/11.png" alt="alt text" width="800">
+<img src="pics/12.png" alt="alt text" width="800">
+
+val_start 
+
+<img src="pics/21.png" alt="alt text" width="800">
+<img src="pics/22.png" alt="alt text" width="800">
+
+val_end
+
+<img src="pics/31.png" alt="alt text" width="800">
+<img src="pics/32.png" alt="alt text" width="800">
+
 ## Analysis
 
 ### Poisson Blending Analysis
