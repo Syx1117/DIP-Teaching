@@ -1,7 +1,8 @@
 import gradio as gr
-from PIL import ImageDraw
+from PIL import Image, ImageDraw
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 # Initialize the polygon state
 def initialize_polygon():
@@ -109,6 +110,14 @@ def create_mask_from_points(points, img_h, img_w):
     ### FILL: Obtain Mask from Polygon Points. 
     ### 0 indicates outside the Polygon.
     ### 255 indicates inside the Polygon.
+    if len(points) < 3:
+        return mask
+
+    polygon = [tuple(map(int, point)) for point in points]
+    mask_img = Image.new("L", (img_w, img_h), 0)
+    draw = ImageDraw.Draw(mask_img)
+    draw.polygon(polygon, fill=255)
+    mask = np.array(mask_img, dtype=np.uint8)
 
     return mask
 
@@ -129,6 +138,44 @@ def cal_laplacian_loss(foreground_img, foreground_mask, blended_img, background_
     loss = torch.tensor(0.0, device=foreground_img.device)
     ### FILL: Compute Laplacian Loss with https://pytorch.org/docs/stable/generated/torch.nn.functional.conv2d.html.
     ### Note: The loss is computed within the masks.
+    channels = foreground_img.shape[1]
+    laplacian_kernel = torch.tensor(
+        [[0.0, 1.0, 0.0],
+         [1.0, -4.0, 1.0],
+         [0.0, 1.0, 0.0]],
+        dtype=foreground_img.dtype,
+        device=foreground_img.device,
+    ).view(1, 1, 3, 3)
+    laplacian_kernel = laplacian_kernel.repeat(channels, 1, 1, 1)
+
+    foreground_laplacian = F.conv2d(
+        foreground_img,
+        laplacian_kernel,
+        padding=1,
+        groups=channels,
+    )
+    blended_laplacian = F.conv2d(
+        blended_img,
+        laplacian_kernel,
+        padding=1,
+        groups=channels,
+    )
+
+    foreground_values = foreground_laplacian[
+        foreground_mask.bool().expand_as(foreground_laplacian)
+    ]
+    blended_values = blended_laplacian[
+        background_mask.bool().expand_as(blended_laplacian)
+    ]
+
+    valid_count = min(foreground_values.numel(), blended_values.numel())
+    if valid_count == 0:
+        return loss
+
+    loss = F.mse_loss(
+        blended_values[:valid_count],
+        foreground_values[:valid_count].detach(),
+    )
 
     return loss
 
