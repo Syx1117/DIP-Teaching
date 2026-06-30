@@ -12,5 +12,18 @@
 To install requirements:
 ```setup
 python -m pip install torch torchvision opencv-python numpy pillow gradio tqdm matplotlib
----
+```
+
 ### Running：
+To run Poisson Image Editing, run:
+```
+python run_blending_gradio.py
+```
+
+To run Pix2Pix training, run:
+```
+cd Pix2Pix
+bash download_facades_dataset.sh
+python train.py
+```
+
