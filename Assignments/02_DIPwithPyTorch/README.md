@@ -130,6 +130,10 @@ The repository provides three Poisson blending image pairs:
 
 The Gradio interface allows selecting arbitrary source regions and placing them on the target image. Compared with direct copy-paste, the optimized result better preserves local source texture while reducing obvious boundary discontinuities. This is because the objective matches Laplacian responses rather than raw RGB values, so the pasted region follows the foreground gradient structure while adapting more naturally to the target background.
 
+<img src="pics/2.1.1.gif" alt="alt text" width="800">
+
+<img src="pics/2.1.gif" alt="alt text" width="800">
+
 For high-contrast examples such as the equation image or shark image, the method can preserve strong edges inside the selected polygon. For portrait-like examples such as the Mona Lisa pair, the blended result is smoother, but color mismatch may still be visible if the selected region and target region have very different illumination.
 
 ### Pix2Pix-Style Image Translation
